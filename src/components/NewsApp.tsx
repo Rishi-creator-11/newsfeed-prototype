@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import "../app/newsfeed.css"; // ← import the stylesheet
+import "../app/newsfeed.css";
 
-/* -- types (unchanged) -- */
+/* ─ Types ─────────────────────────────────────────────────────────── */
 interface NewsApiArticle {
   title: string;
   description: string | null;
@@ -15,6 +15,7 @@ interface NewsApiResponse {
   totalResults: number;
   articles: NewsApiArticle[];
 }
+
 type Comment = { user: string; text: string };
 interface Article {
   id: number;
@@ -24,38 +25,46 @@ interface Article {
   comments: Comment[];
 }
 
+/* ─ Component ─────────────────────────────────────────────────────── */
 export function NewsApp() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /* Fetch headlines once */
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("/api/news");
-        const j: NewsApiResponse = await r.json();
-        if (!r.ok) throw new Error(j.status);
+        const res = await fetch("/api/news");
+        const json: NewsApiResponse = await res.json();
+        if (!res.ok) throw new Error(json.status);
+
         setArticles(
-          j.articles.map((a, i) => ({
-            id: i + 1,
-            title: a.title,
-            summary: a.description ?? a.content ?? "",
-            source: a.url,
-            comments: [],
-          }))
+          json.articles.map(
+            (a, idx): Article => ({
+              id: idx + 1,
+              title: a.title,
+              summary: a.description ?? a.content ?? "",
+              source: a.url,
+              comments: [],
+            })
+          )
         );
-      } catch (e: any) {
-        setError(e.message || "Unknown error");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        setError(msg);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  const addComment = (id: number) => {
+  /* Add comment */
+  const addComment = (id: number): void => {
     const text = drafts[id]?.trim();
     if (!text) return;
+
     setArticles((prev) =>
       prev.map((a) =>
         a.id === id
@@ -66,6 +75,7 @@ export function NewsApp() {
     setDrafts((d) => ({ ...d, [id]: "" }));
   };
 
+  /* UI states */
   if (loading)
     return <p style={{ textAlign: "center", marginTop: "2rem" }}>Loading…</p>;
   if (error)
@@ -75,9 +85,9 @@ export function NewsApp() {
       </p>
     );
 
+  /* Render feed */
   return (
     <div className="feed-container">
-      {" "}
       <h1
         style={{
           textAlign: "center",
@@ -88,12 +98,13 @@ export function NewsApp() {
       >
         NewsFeed
       </h1>
+
       {articles.map((art) => (
         <article key={art.id} className="news-card">
           <h2>{art.title}</h2>
           <p className="news-summary">{art.summary}</p>
 
-          {/* link + action buttons */}
+          {/* link & action buttons */}
           <div className="action-row">
             <a href={art.source} target="_blank" className="read-link">
               Read full article →
@@ -126,7 +137,7 @@ export function NewsApp() {
                 className="comment-input"
                 type="text"
                 placeholder="Add a comment…"
-                value={drafts[art.id] || ""}
+                value={drafts[art.id] ?? ""}
                 onChange={(e) =>
                   setDrafts((d) => ({ ...d, [art.id]: e.target.value }))
                 }
