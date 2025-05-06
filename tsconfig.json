@@ -23,6 +23,12 @@
 
     "plugins": [{ "name": "next" }]
   },
-  "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "src/**/*",
+    ".next/types/**/*.ts",
+    "src/types/**/*.d.ts",
+    ".next/types/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
